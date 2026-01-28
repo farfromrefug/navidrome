@@ -200,4 +200,92 @@ var _ = Describe("LibraryRepository", func() {
 			})
 		})
 	})
+
+	Describe("Ignored libraries", func() {
+		var normalLib, ignoredLib *model.Library
+
+		BeforeEach(func() {
+			// Create a normal library
+			normalLib = &model.Library{
+				ID:   0,
+				Name: "Normal Library",
+				Path: "/music/normal",
+			}
+			err := repo.Put(normalLib)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Create an ignored library
+			ignoredLib = &model.Library{
+				ID:      0,
+				Name:    "Ignored Library",
+				Path:    "/music/ignored",
+				Ignored: true,
+			}
+			err = repo.Put(ignoredLib)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("filters out ignored libraries in GetAll", func() {
+			libs, err := repo.GetAll()
+			Expect(err).ToNot(HaveOccurred())
+
+			// Check that ignored library is not in the list
+			var foundNormal, foundIgnored bool
+			for _, lib := range libs {
+				if lib.ID == normalLib.ID {
+					foundNormal = true
+				}
+				if lib.ID == ignoredLib.ID {
+					foundIgnored = true
+				}
+			}
+
+			Expect(foundNormal).To(BeTrue(), "Normal library should be in the list")
+			Expect(foundIgnored).To(BeFalse(), "Ignored library should not be in the list")
+		})
+
+		It("filters out ignored libraries in CountAll", func() {
+			// Get count before
+			countBefore, err := repo.CountAll()
+			Expect(err).ToNot(HaveOccurred())
+
+			// Count should not include ignored library
+			// (it should be the same as before adding the ignored library)
+			libs, err := repo.GetAll()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(countBefore).To(Equal(int64(len(libs))))
+		})
+
+		It("can still retrieve ignored libraries by ID", func() {
+			lib, err := repo.Get(ignoredLib.ID)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(lib.Ignored).To(BeTrue())
+			Expect(lib.Name).To(Equal("Ignored Library"))
+		})
+
+		It("can update a library to set ignored status", func() {
+			// Get the normal library
+			lib, err := repo.Get(normalLib.ID)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(lib.Ignored).To(BeFalse())
+
+			// Set it to ignored
+			lib.Ignored = true
+			err = repo.Put(lib)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify it's now ignored and not in the list
+			libs, err := repo.GetAll()
+			Expect(err).ToNot(HaveOccurred())
+
+			for _, l := range libs {
+				Expect(l.ID).ToNot(Equal(normalLib.ID), "Ignored library should not be in the list")
+			}
+
+			// But can still get it by ID
+			lib, err = repo.Get(normalLib.ID)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(lib.Ignored).To(BeTrue())
+		})
+	})
 })
