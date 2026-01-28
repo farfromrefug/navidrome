@@ -278,14 +278,30 @@ func (r *libraryRepository) Delete(id int) error {
 }
 
 func (r *libraryRepository) GetAll(ops ...model.QueryOptions) (model.Libraries, error) {
-	sq := r.newSelect(ops...).Columns("*").Where(Eq{"ignored": false})
+	sq := r.newSelect(ops...).Columns("*")
+	
+	// Only filter out ignored libraries for non-admin users
+	// Admin users need to see ignored libraries in the settings to manage them
+	user := loggedUser(r.ctx)
+	if !user.IsAdmin && user.ID != invalidUserId {
+		sq = sq.Where(Eq{"ignored": false})
+	}
+	
 	res := model.Libraries{}
 	err := r.queryAll(sq, &res)
 	return res, err
 }
 
 func (r *libraryRepository) CountAll(ops ...model.QueryOptions) (int64, error) {
-	sq := r.newSelect(ops...).Where(Eq{"ignored": false})
+	sq := r.newSelect(ops...)
+	
+	// Only filter out ignored libraries for non-admin users
+	// Admin users need to see ignored libraries in the settings to manage them
+	user := loggedUser(r.ctx)
+	if !user.IsAdmin && user.ID != invalidUserId {
+		sq = sq.Where(Eq{"ignored": false})
+	}
+	
 	return r.count(sq)
 }
 
