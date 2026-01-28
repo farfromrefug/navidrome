@@ -35,7 +35,9 @@ const LibraryList = (props) => {
       {isXsmall ? (
         <SimpleList
           primaryText={(record) => record.name}
-          secondaryText={(record) => record.path}
+          secondaryText={(record) =>
+            `${record.path}${record.ignored ? ' (Ignored)' : ''}`
+          }
         />
       ) : (
         <Datagrid rowClick="edit">

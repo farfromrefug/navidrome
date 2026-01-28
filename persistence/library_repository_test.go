@@ -349,5 +349,29 @@ var _ = Describe("LibraryRepository", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(lib.Ignored).To(BeTrue())
 		})
+
+		It("includes ignored libraries for headless processes (background operations)", func() {
+			// Create a headless context (no user context, like a background scanner)
+			headlessCtx := log.NewContext(context.TODO())
+			headlessRepo := NewLibraryRepository(headlessCtx, conn)
+
+			// Headless processes should see all libraries including ignored ones
+			// This is important for operations like library scanning
+			libs, err := headlessRepo.GetAll()
+			Expect(err).ToNot(HaveOccurred())
+
+			var foundNormal, foundIgnored bool
+			for _, lib := range libs {
+				if lib.ID == normalLib.ID {
+					foundNormal = true
+				}
+				if lib.ID == ignoredLib.ID {
+					foundIgnored = true
+				}
+			}
+
+			Expect(foundNormal).To(BeTrue(), "Normal library should be visible to headless processes")
+			Expect(foundIgnored).To(BeTrue(), "Ignored library should be visible to headless processes for background operations")
+		})
 	})
 })

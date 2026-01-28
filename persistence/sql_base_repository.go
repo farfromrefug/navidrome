@@ -201,7 +201,7 @@ func libraryIdFilter(_ string, value interface{}) Sqlizer {
 }
 
 // applyLibraryFilter adds library filtering to queries for tables that have a library_id column
-// This ensures users only see content from libraries they have access to
+// This ensures users only see content from libraries they have access to and filters out content from ignored libraries for all users
 func (r sqlRepository) applyLibraryFilter(sq SelectBuilder, tableName ...string) SelectBuilder {
 	user := loggedUser(r.ctx)
 
