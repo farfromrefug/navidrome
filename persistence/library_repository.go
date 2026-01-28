@@ -55,7 +55,10 @@ func (r *libraryRepository) GetPath(id int) (string, error) {
 
 	libLock.Lock()
 	defer libLock.Unlock()
-	libs, err := r.GetAll()
+	// Load all libraries including ignored ones for caching
+	sq := r.newSelect().Columns("*")
+	libs := model.Libraries{}
+	err := r.queryAll(sq, &libs)
 	if err != nil {
 		log.Error(r.ctx, "Error loading libraries from DB", err)
 		return "", err
@@ -94,6 +97,7 @@ func (r *libraryRepository) Put(l *model.Library) error {
 			"path":              l.Path,
 			"remote_path":       l.RemotePath,
 			"default_new_users": l.DefaultNewUsers,
+			"ignored":           l.Ignored,
 			"updated_at":        l.UpdatedAt,
 		}
 		sq := Update(r.tableName).SetMap(cols).Where(Eq{"id": l.ID})
@@ -274,14 +278,14 @@ func (r *libraryRepository) Delete(id int) error {
 }
 
 func (r *libraryRepository) GetAll(ops ...model.QueryOptions) (model.Libraries, error) {
-	sq := r.newSelect(ops...).Columns("*")
+	sq := r.newSelect(ops...).Columns("*").Where(Eq{"ignored": false})
 	res := model.Libraries{}
 	err := r.queryAll(sq, &res)
 	return res, err
 }
 
 func (r *libraryRepository) CountAll(ops ...model.QueryOptions) (int64, error) {
-	sq := r.newSelect(ops...)
+	sq := r.newSelect(ops...).Where(Eq{"ignored": false})
 	return r.count(sq)
 }
 
