@@ -42,6 +42,7 @@ const LibraryList = (props) => {
           <TextField source="name" />
           <TextField source="path" />
           <BooleanField source="defaultNewUsers" />
+          <BooleanField source="ignored" />
           <NumberField source="totalSongs" />
           <NumberField source="totalAlbums" />
           <NumberField source="totalMissingFiles" />
