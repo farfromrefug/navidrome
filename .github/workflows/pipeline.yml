@@ -299,7 +299,7 @@ jobs:
   cleanup-digests:
     name: Cleanup digest artifacts
     runs-on: ubuntu-latest
-    needs: [push-manifest-ghcr, push-manifest-dockerhub]
+    needs: [push-manifest-ghcr]
     if: always() && needs.push-manifest-ghcr.result == 'success'
     steps:
       - name: Delete unnecessary digest artifacts
